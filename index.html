@@ -1277,7 +1277,7 @@ body.menu-open .mmenu a,body.menu-open .mmenu .mmenu__copy{opacity:1;transform:n
 <!-- ===================== HEADER ===================== -->
 <header class="hdr" id="hdr">
   <div class="wrap hdr__in">
-    <a href="#/" class="brand" data-link="home" aria-label="Duo Creative — home">
+    <a href="/" class="brand" data-link="home" aria-label="Duo Creative — home">
       <svg class="brand__mark" viewBox="0 0 178 184" aria-hidden="true">
         <path d="M0 0A88 92 0 0 1 0 184Z" class="mk-a"/>
         <path d="M178 0A88 92 0 0 0 178 184Z" class="mk-b"/>
@@ -1306,7 +1306,7 @@ body.menu-open .mmenu a,body.menu-open .mmenu .mmenu__copy{opacity:1;transform:n
 <div class="mmenu" id="mmenu">
   <div class="mmenu__in">
     <nav class="mmenu__nav" aria-label="Main">
-      <a href="#/" data-link="home" style="--i:0"><em>01</em><span>Home</span><b>Studio overview</b><i class="mmenu__ar"></i></a>
+      <a href="/" data-link="home" style="--i:0"><em>01</em><span>Home</span><b>Studio overview</b><i class="mmenu__ar"></i></a>
       <a href="#/work" data-link="work" style="--i:1"><em>02</em><span>Work</span><b>18 case studies</b><i class="mmenu__ar"></i></a>
       <a href="#/archive" data-link="archive" style="--i:2"><em>03</em><span>Archive</span><b>42 pieces</b><i class="mmenu__ar"></i></a>
       <a href="#/services" data-link="services" style="--i:3"><em>04</em><span>Services</span><b>12 disciplines</b><i class="mmenu__ar"></i></a>
@@ -1870,7 +1870,7 @@ body.menu-open .mmenu a,body.menu-open .mmenu .mmenu__copy{opacity:1;transform:n
   <div class="wrap">
     <div class="ftr__grid">
       <div>
-        <a href="#/" class="brand brand--lg" data-link="home">
+        <a href="/" class="brand brand--lg" data-link="home">
           <svg class="brand__mark" viewBox="0 0 178 184" aria-hidden="true">
             <path d="M0 0A88 92 0 0 1 0 184Z" class="mk-a"/><path d="M178 0A88 92 0 0 0 178 184Z" class="mk-b"/>
           </svg>
@@ -2281,7 +2281,7 @@ function go(page,opts){
     const el=$("#page-"+page); el.classList.add("is-active");
     current=page;
     document.title=opts.title||TITLES[page];
-    setHash(opts.hash||(page==="home"?"#/":"#/"+page));
+    setHash(opts.hash||(page==="home"?"":"#/"+page));
     scrollTo({top:0,behavior:"instant"});
     $$(".nav a,.mmenu a").forEach(a=>a.classList.toggle("is-active",a.dataset.link===page));
     document.body.dataset.bg="dark";
@@ -2305,7 +2305,13 @@ document.addEventListener("click",e=>{
 
 /* deep links: every page, case study and article has its own address */
 let lastSetHash="";
-function setHash(h){lastSetHash=h;if(location.hash!==h)location.hash=h}
+function setHash(h){
+  const clean=(!h||h==="#/")?"":h;          /* home is the bare URL, not "#/" */
+  lastSetHash=clean;
+  if((location.hash||"")===clean) return;
+  try{ history.pushState(null,"",location.pathname+location.search+clean); }
+  catch(e){ location.hash=clean||"#"; }      /* file:// fallback */
+}
 function routeFromHash(){
   if(ptTimer) return;                          /* a navigation is already in flight */
   const raw=location.hash.replace(/^#\/?/,"");
@@ -2315,8 +2321,9 @@ function routeFromHash(){
   const map={"":"home",work:"work",services:"services",advertising:"advertising",about:"about",studio:"about",journal:"blog",blog:"blog",careers:"careers",contact:"contact",archive:"archive"};
   go(map[a]||"home");
 }
-/* only respond to hash changes the user made (back/forward, pasted link) */
-addEventListener("hashchange",()=>{if(location.hash!==lastSetHash)routeFromHash()});
+/* respond to the user's own navigation: back, forward, or a pasted link */
+addEventListener("popstate",()=>{lastSetHash=location.hash||"";routeFromHash()});
+addEventListener("hashchange",()=>{if((location.hash||"")!==lastSetHash)routeFromHash()});
 
 /* ---------- MOBILE MENU ----------------------------------------- */
 function closeMenu(){document.body.classList.remove("menu-open","is-locked");$("#burger").setAttribute("aria-expanded","false")}
@@ -3786,8 +3793,8 @@ observe();
 watchTheme();
 $$(".rv",$("#page-home")).slice(0,3).forEach(n=>n.classList.add("in"));
 
-if(location.hash&&location.hash!=="#/") { routeFromHash(); }
-else { setHash("#/"); }
+if(location.hash&&location.hash!=="#/"){ routeFromHash(); }
+else if(location.hash==="#/"){ try{history.replaceState(null,"",location.pathname+location.search)}catch(e){} }
 
 if(document.readyState==="complete") setTimeout(dismissLoader,RM?0:1250);
 else addEventListener("load",()=>setTimeout(dismissLoader,RM?0:1250));
